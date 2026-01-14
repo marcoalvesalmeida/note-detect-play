@@ -1,15 +1,17 @@
 import { motion } from 'framer-motion';
-import { Music, Star, Clock, Zap } from 'lucide-react';
+import { Music, Star, Clock, Zap, ArrowLeft } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { Exercise, SAMPLE_EXERCISES } from '@/utils/musicData';
 import { cn } from '@/lib/utils';
 
 interface ExerciseSelectorProps {
   onSelect: (exercise: Exercise) => void;
+  onBack?: () => void;
 }
 
-export function ExerciseSelector({ onSelect }: ExerciseSelectorProps) {
+export function ExerciseSelector({ onSelect, onBack }: ExerciseSelectorProps) {
   const getDifficultyColor = (difficulty: Exercise['difficulty']) => {
     switch (difficulty) {
       case 'beginner':
@@ -32,14 +34,36 @@ export function ExerciseSelector({ onSelect }: ExerciseSelectorProps) {
     }
   };
 
+  const getEstimatedDuration = (exercise: Exercise) => {
+    const lastNote = exercise.notes[exercise.notes.length - 1];
+    const totalBeats = lastNote.startBeat + lastNote.duration;
+    const seconds = (totalBeats / exercise.bpm) * 60;
+    if (seconds < 60) {
+      return `${Math.round(seconds)}s`;
+    }
+    return `${Math.floor(seconds / 60)}m ${Math.round(seconds % 60)}s`;
+  };
+
   return (
-    <div className="min-h-screen p-4 md:p-8">
-      <div className="max-w-4xl mx-auto space-y-8">
+    <div className="min-h-[100dvh] flex flex-col p-4 md:p-8">
+      <div className="max-w-4xl mx-auto w-full flex-1 flex flex-col">
+        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center space-y-2"
+          className="text-center space-y-2 mb-6"
         >
+          {onBack && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={onBack}
+              className="absolute left-4 top-4"
+            >
+              <ArrowLeft className="w-4 h-4 mr-2" />
+              Voltar
+            </Button>
+          )}
           <h1 className="text-3xl md:text-4xl font-display font-bold gradient-text">
             Escolha um Exercício
           </h1>
@@ -48,7 +72,8 @@ export function ExerciseSelector({ onSelect }: ExerciseSelectorProps) {
           </p>
         </motion.div>
 
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+        {/* Exercise Grid */}
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3 flex-1 content-start pb-4">
           {SAMPLE_EXERCISES.map((exercise, i) => (
             <motion.div
               key={exercise.id}
@@ -58,8 +83,8 @@ export function ExerciseSelector({ onSelect }: ExerciseSelectorProps) {
             >
               <Card
                 className={cn(
-                  'p-6 cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02]',
-                  'border-2 hover:border-primary/50 glass-card'
+                  'p-5 cursor-pointer transition-all duration-200 hover:shadow-lg hover:scale-[1.02]',
+                  'border-2 hover:border-primary/50 glass-card h-full'
                 )}
                 onClick={() => onSelect(exercise)}
               >
@@ -81,7 +106,7 @@ export function ExerciseSelector({ onSelect }: ExerciseSelectorProps) {
                       {exercise.title}
                     </h3>
                     <p className="text-sm text-muted-foreground">
-                      {exercise.notes.length} notas
+                      {exercise.notes.length} notas • {getEstimatedDuration(exercise)}
                     </p>
                   </div>
 
