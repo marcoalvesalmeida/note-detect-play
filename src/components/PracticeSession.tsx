@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, RotateCcw, Settings, X, Minus, Plus, Volume2, VolumeX } from 'lucide-react';
+import { Play, Pause, RotateCcw, Settings, X, Minus, Plus, Volume2, VolumeX, Music2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { VirtualKeyboard } from './VirtualKeyboard';
@@ -8,6 +8,7 @@ import { SheetMusic } from './SheetMusic';
 import { ScoreDisplay } from './ScoreDisplay';
 import { useAudioCapture } from '@/hooks/useAudioCapture';
 import { useAudioPlayback } from '@/hooks/useAudioPlayback';
+import { useBackingTracks } from '@/hooks/useBackingTracks';
 import { compareNotes } from '@/utils/pitchDetection';
 import { Exercise, getNoteNamePt } from '@/utils/musicData';
 import { cn } from '@/lib/utils';
@@ -27,18 +28,22 @@ export function PracticeSession({ exercise, onExit }: PracticeSessionProps) {
   const [bpm, setBpm] = useState(exercise.bpm);
   const [showSettings, setShowSettings] = useState(false);
   const [showResults, setShowResults] = useState(false);
-  const [playbackEnabled, setPlaybackEnabled] = useState(true);
+  const [playbackEnabled, setPlaybackEnabled] = useState(false); // Note playback disabled by default
+  const [backingTrackEnabled, setBackingTrackEnabled] = useState(true);
   const [noteStatuses, setNoteStatuses] = useState<NoteStatus[]>(
     exercise.notes.map(() => 'pending')
   );
 
   const { currentPitch, startListening, stopListening, isListening } = useAudioCapture();
   const { playCountdown, playNote, stopPlayback } = useAudioPlayback();
+  const { getTrack, playTrack, pauseTrack, stopTrack, seekTo, hasTrack } = useBackingTracks();
+  
   const lastProcessedNote = useRef(-1);
   const lastPlayedNoteIndex = useRef(-1);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const msPerBeat = (60 / bpm) * 1000;
+  const exerciseHasBackingTrack = hasTrack(exercise.id);
 
   const getCurrentNoteIndex = useCallback(() => {
     return exercise.notes.findIndex(
@@ -101,6 +106,7 @@ export function PracticeSession({ exercise, onExit }: PracticeSessionProps) {
         if (prev >= totalBeats) {
           setIsPlaying(false);
           stopPlayback();
+          stopTrack();
           // Mark remaining pending notes as missed
           setNoteStatuses((statuses) =>
             statuses.map((s) => (s === 'pending' ? 'missed' : s))
@@ -141,16 +147,23 @@ export function PracticeSession({ exercise, onExit }: PracticeSessionProps) {
     setIsCountingDown(false);
     setCountdownNumber(0);
     setIsPlaying(true);
+
+    // Start backing track if available and enabled
+    if (exerciseHasBackingTrack && backingTrackEnabled) {
+      playTrack(exercise.id);
+    }
   };
 
   const handlePause = () => {
     setIsPlaying(false);
     stopPlayback();
+    pauseTrack();
   };
 
   const handleRestart = () => {
     setIsPlaying(false);
     stopPlayback();
+    stopTrack();
     setCurrentBeat(0);
     setNoteStatuses(exercise.notes.map(() => 'pending'));
     lastProcessedNote.current = -1;
@@ -161,6 +174,7 @@ export function PracticeSession({ exercise, onExit }: PracticeSessionProps) {
   const handleExit = () => {
     stopListening();
     stopPlayback();
+    stopTrack();
     onExit();
   };
 
@@ -198,11 +212,22 @@ export function PracticeSession({ exercise, onExit }: PracticeSessionProps) {
           </div>
 
           <div className="flex items-center gap-2">
+            {exerciseHasBackingTrack && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setBackingTrackEnabled(!backingTrackEnabled)}
+                title={backingTrackEnabled ? 'Desativar backing track' : 'Ativar backing track'}
+                className={backingTrackEnabled ? 'text-success' : ''}
+              >
+                <Music2 className="w-5 h-5" />
+              </Button>
+            )}
             <Button
               variant="ghost"
               size="icon"
               onClick={() => setPlaybackEnabled(!playbackEnabled)}
-              title={playbackEnabled ? 'Desativar playback' : 'Ativar playback'}
+              title={playbackEnabled ? 'Desativar notas' : 'Ativar notas'}
             >
               {playbackEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
             </Button>
