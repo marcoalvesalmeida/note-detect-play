@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Play, Pause, RotateCcw, Settings, X, Minus, Plus } from 'lucide-react';
+import { Play, Pause, RotateCcw, Settings, X, Minus, Plus, Volume2, VolumeX } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { VirtualKeyboard } from './VirtualKeyboard';
 import { SheetMusic } from './SheetMusic';
 import { ScoreDisplay } from './ScoreDisplay';
 import { useAudioCapture } from '@/hooks/useAudioCapture';
+import { useAudioPlayback } from '@/hooks/useAudioPlayback';
 import { compareNotes } from '@/utils/pitchDetection';
 import { Exercise, getNoteNamePt } from '@/utils/musicData';
 import { cn } from '@/lib/utils';
@@ -20,16 +21,21 @@ type NoteStatus = 'pending' | 'correct' | 'wrong' | 'close' | 'missed';
 
 export function PracticeSession({ exercise, onExit }: PracticeSessionProps) {
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isCountingDown, setIsCountingDown] = useState(false);
+  const [countdownNumber, setCountdownNumber] = useState(0);
   const [currentBeat, setCurrentBeat] = useState(0);
   const [bpm, setBpm] = useState(exercise.bpm);
   const [showSettings, setShowSettings] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [playbackEnabled, setPlaybackEnabled] = useState(true);
   const [noteStatuses, setNoteStatuses] = useState<NoteStatus[]>(
     exercise.notes.map(() => 'pending')
   );
 
   const { currentPitch, startListening, stopListening, isListening } = useAudioCapture();
+  const { playCountdown, playNote, stopPlayback } = useAudioPlayback();
   const lastProcessedNote = useRef(-1);
+  const lastPlayedNoteIndex = useRef(-1);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
 
   const msPerBeat = (60 / bpm) * 1000;
@@ -44,6 +50,17 @@ export function PracticeSession({ exercise, onExit }: PracticeSessionProps) {
 
   const currentNoteIndex = getCurrentNoteIndex();
   const currentNote = currentNoteIndex >= 0 ? exercise.notes[currentNoteIndex] : null;
+
+  // Play note when it becomes active
+  useEffect(() => {
+    if (!isPlaying || !playbackEnabled || currentNoteIndex < 0) return;
+    if (currentNoteIndex === lastPlayedNoteIndex.current) return;
+
+    const note = exercise.notes[currentNoteIndex];
+    const durationMs = note.duration * msPerBeat;
+    playNote(note.note, note.octave, durationMs);
+    lastPlayedNoteIndex.current = currentNoteIndex;
+  }, [isPlaying, playbackEnabled, currentNoteIndex, exercise.notes, msPerBeat, playNote]);
 
   // Process detected pitch
   useEffect(() => {
@@ -83,6 +100,7 @@ export function PracticeSession({ exercise, onExit }: PracticeSessionProps) {
 
         if (prev >= totalBeats) {
           setIsPlaying(false);
+          stopPlayback();
           // Mark remaining pending notes as missed
           setNoteStatuses((statuses) =>
             statuses.map((s) => (s === 'pending' ? 'missed' : s))
@@ -100,29 +118,49 @@ export function PracticeSession({ exercise, onExit }: PracticeSessionProps) {
         clearInterval(intervalRef.current);
       }
     };
-  }, [isPlaying, msPerBeat, exercise.notes]);
+  }, [isPlaying, msPerBeat, exercise.notes, stopPlayback]);
 
   const handleStart = async () => {
     if (!isListening) {
       await startListening();
     }
+    
+    // Start countdown
+    setIsCountingDown(true);
+    setCountdownNumber(4);
+    
+    // Animate countdown numbers
+    for (let i = 4; i >= 1; i--) {
+      setCountdownNumber(i);
+      await new Promise((resolve) => setTimeout(resolve, msPerBeat));
+    }
+    
+    // Play click sounds for countdown
+    await playCountdown(4, bpm);
+    
+    setIsCountingDown(false);
+    setCountdownNumber(0);
     setIsPlaying(true);
   };
 
   const handlePause = () => {
     setIsPlaying(false);
+    stopPlayback();
   };
 
   const handleRestart = () => {
     setIsPlaying(false);
+    stopPlayback();
     setCurrentBeat(0);
     setNoteStatuses(exercise.notes.map(() => 'pending'));
     lastProcessedNote.current = -1;
+    lastPlayedNoteIndex.current = -1;
     setShowResults(false);
   };
 
   const handleExit = () => {
     stopListening();
+    stopPlayback();
     onExit();
   };
 
@@ -141,22 +179,33 @@ export function PracticeSession({ exercise, onExit }: PracticeSessionProps) {
       ]
     : [];
 
+  const totalBeats = exercise.notes[exercise.notes.length - 1].startBeat +
+    exercise.notes[exercise.notes.length - 1].duration;
+
   return (
-    <div className="min-h-screen flex flex-col bg-background">
+    <div className="h-[100dvh] flex flex-col bg-background overflow-hidden">
       {/* Header */}
-      <header className="border-b border-border p-4">
+      <header className="border-b border-border p-3 md:p-4 flex-shrink-0">
         <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3 md:gap-4">
             <Button variant="ghost" size="icon" onClick={handleExit}>
               <X className="w-5 h-5" />
             </Button>
             <div>
-              <h1 className="font-display font-bold">{exercise.title}</h1>
-              <p className="text-sm text-muted-foreground">{bpm} BPM</p>
+              <h1 className="font-display font-bold text-sm md:text-base">{exercise.title}</h1>
+              <p className="text-xs md:text-sm text-muted-foreground">{bpm} BPM</p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setPlaybackEnabled(!playbackEnabled)}
+              title={playbackEnabled ? 'Desativar playback' : 'Ativar playback'}
+            >
+              {playbackEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+            </Button>
             <Button
               variant="ghost"
               size="icon"
@@ -175,7 +224,7 @@ export function PracticeSession({ exercise, onExit }: PracticeSessionProps) {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="border-b border-border overflow-hidden"
+            className="border-b border-border overflow-hidden flex-shrink-0"
           >
             <div className="max-w-5xl mx-auto p-4">
               <div className="flex items-center gap-4">
@@ -212,18 +261,18 @@ export function PracticeSession({ exercise, onExit }: PracticeSessionProps) {
         )}
       </AnimatePresence>
 
-      {/* Main Content */}
-      <main className="flex-1 flex flex-col gap-6 p-4 max-w-5xl mx-auto w-full">
+      {/* Main Content - Scrollable */}
+      <main className="flex-1 flex flex-col gap-4 p-3 md:p-4 max-w-5xl mx-auto w-full overflow-y-auto min-h-0">
         {/* Current Note Display */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center py-8"
+          className="text-center py-4 md:py-8"
         >
           <p className="text-sm text-muted-foreground mb-2">Nota Atual</p>
           <div
             className={cn(
-              'text-6xl md:text-8xl font-display font-bold transition-colors duration-200',
+              'text-5xl md:text-8xl font-display font-bold transition-colors duration-200',
               currentPitch && 'gradient-text'
             )}
           >
@@ -242,7 +291,7 @@ export function PracticeSession({ exercise, onExit }: PracticeSessionProps) {
         {currentNote && (
           <div className="text-center">
             <p className="text-sm text-muted-foreground">Toque:</p>
-            <p className="text-2xl font-display font-bold text-primary">
+            <p className="text-xl md:text-2xl font-display font-bold text-primary">
               {getNoteNamePt(currentNote.note)}{currentNote.octave}
             </p>
           </div>
@@ -274,31 +323,23 @@ export function PracticeSession({ exercise, onExit }: PracticeSessionProps) {
               className="h-full bg-primary"
               initial={{ width: '0%' }}
               animate={{
-                width: `${
-                  (currentBeat /
-                    (exercise.notes[exercise.notes.length - 1].startBeat +
-                      exercise.notes[exercise.notes.length - 1].duration)) *
-                  100
-                }%`,
+                width: `${(currentBeat / totalBeats) * 100}%`,
               }}
             />
           </div>
-          <div className="flex justify-between text-sm text-muted-foreground">
+          <div className="flex justify-between text-xs md:text-sm text-muted-foreground">
             <span>
               {correctNotes}/{exercise.notes.length} corretas
             </span>
             <span>
-              {Math.floor(currentBeat)}/
-              {exercise.notes[exercise.notes.length - 1].startBeat +
-                exercise.notes[exercise.notes.length - 1].duration}{' '}
-              tempos
+              {Math.floor(currentBeat)}/{totalBeats} tempos
             </span>
           </div>
         </div>
       </main>
 
-      {/* Controls */}
-      <footer className="border-t border-border p-4">
+      {/* Controls - Fixed at bottom */}
+      <footer className="border-t border-border p-3 md:p-4 flex-shrink-0 bg-background">
         <div className="max-w-5xl mx-auto flex items-center justify-center gap-4">
           <Button variant="outline" size="icon" onClick={handleRestart}>
             <RotateCcw className="w-5 h-5" />
@@ -307,8 +348,11 @@ export function PracticeSession({ exercise, onExit }: PracticeSessionProps) {
             size="lg"
             className="w-32 glow-primary"
             onClick={isPlaying ? handlePause : handleStart}
+            disabled={isCountingDown}
           >
-            {isPlaying ? (
+            {isCountingDown ? (
+              <span className="text-lg font-bold">{countdownNumber}</span>
+            ) : isPlaying ? (
               <>
                 <Pause className="w-5 h-5 mr-2" />
                 Pausar
@@ -322,6 +366,29 @@ export function PracticeSession({ exercise, onExit }: PracticeSessionProps) {
           </Button>
         </div>
       </footer>
+
+      {/* Countdown Overlay */}
+      <AnimatePresence>
+        {isCountingDown && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50"
+          >
+            <motion.div
+              key={countdownNumber}
+              initial={{ scale: 0.5, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 1.5, opacity: 0 }}
+              transition={{ duration: 0.3 }}
+              className="text-9xl font-display font-bold gradient-text"
+            >
+              {countdownNumber}
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Results Modal */}
       {showResults && (
