@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { ThemeToggle } from './ThemeToggle';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Play, Pause, RotateCcw, Settings, X, Minus, Plus, Volume2, VolumeX, Music2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -231,6 +232,7 @@ export function PracticeSession({ exercise, onExit }: PracticeSessionProps) {
             >
               {playbackEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
             </Button>
+            <ThemeToggle />
             <Button
               variant="ghost"
               size="icon"
