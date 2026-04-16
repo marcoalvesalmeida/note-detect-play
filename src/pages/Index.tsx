@@ -3,6 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { CalibrationScreen } from '@/components/CalibrationScreen';
 import { ExerciseSelector } from '@/components/ExerciseSelector';
 import { PracticeSession } from '@/components/PracticeSession';
+import { ThemeToggle } from '@/components/ThemeToggle';
 import { Exercise } from '@/utils/musicData';
 import { Music, Piano, Target, Sparkles } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -33,6 +34,10 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-background">
+      {/* Theme toggle - always visible */}
+      <div className="fixed top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
       <AnimatePresence mode="wait">
         {appState === 'welcome' && (
           <motion.div
@@ -113,7 +118,7 @@ const Index = () => {
                   Começar Agora
                 </Button>
                 <p className="text-xs text-muted-foreground mt-4">
-                  Use fones de ouvido para melhor precisão
+                  Conecte seu teclado e comece a tocar
                 </p>
               </motion.div>
             </div>

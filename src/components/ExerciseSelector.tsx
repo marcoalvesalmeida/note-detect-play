@@ -1,4 +1,5 @@
 import { motion } from 'framer-motion';
+import { ThemeToggle } from './ThemeToggle';
 import { Music, Star, Clock, Zap, ArrowLeft, Music2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -55,7 +56,7 @@ export function ExerciseSelector({ onSelect, onBack }: ExerciseSelectorProps) {
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
-          className="text-center space-y-2 mb-6"
+          className="text-center space-y-2 mb-6 relative"
         >
           {onBack && (
             <Button
