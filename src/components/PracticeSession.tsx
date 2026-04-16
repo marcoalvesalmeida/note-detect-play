@@ -40,7 +40,7 @@ export function PracticeSession({ exercise, onExit }: PracticeSessionProps) {
   
   const lastProcessedNote = useRef(-1);
   const lastPlayedNoteIndex = useRef(-1);
-  const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const msPerBeat = (60 / bpm) * 1000;
   const exerciseHasBackingTrack = hasTrack(exercise.id);
