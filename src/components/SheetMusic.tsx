@@ -36,7 +36,7 @@ export function SheetMusic({
 }: SheetMusicProps) {
   const staffHeight = 120;
   const lineSpacing = staffHeight / 6;
-  const noteSpacing = 60;
+  const noteSpacing = 72;
 
   const getNoteY = (note: string, octave: number) => {
     const key = `${note.replace('#', '')}${octave}`;
