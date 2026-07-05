@@ -197,48 +197,72 @@ export function PracticeSession({ exercise, onExit }: PracticeSessionProps) {
   const totalBeats = exercise.notes[exercise.notes.length - 1].startBeat +
     exercise.notes[exercise.notes.length - 1].duration;
 
-  return (
-    <div className="h-[100dvh] flex flex-col bg-background overflow-hidden">
-      {/* Header */}
-      <header className="border-b border-border p-3 md:p-4 flex-shrink-0">
-        <div className="max-w-5xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3 md:gap-4">
-            <Button variant="ghost" size="icon" onClick={handleExit}>
-              <X className="w-5 h-5" />
-            </Button>
-            <div>
-              <h1 className="font-display font-bold text-sm md:text-base">{exercise.title}</h1>
-              <p className="text-xs md:text-sm text-muted-foreground">{bpm} BPM</p>
-            </div>
-          </div>
+  const currentIndexForCount = Math.max(0, Math.min(exercise.notes.length, currentNoteIndex >= 0 ? currentNoteIndex + 1 : Math.floor(currentBeat) === 0 ? 0 : exercise.notes.length));
+  const progressPct = Math.min(100, (currentBeat / totalBeats) * 100);
 
-          <div className="flex items-center gap-2">
+  return (
+    <div className="relative h-[100dvh] flex flex-col overflow-hidden bg-[hsl(265_70%_65%)] dark:bg-[hsl(265_45%_35%)] text-white">
+      {/* Top Bar */}
+      <header className="flex-shrink-0 px-3 md:px-6 py-3 flex items-center gap-3 md:gap-6">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={isPlaying ? handlePause : (currentBeat > 0 ? handleStart : handleExit)}
+          className="rounded-full h-11 w-11 bg-white/15 hover:bg-white/25 text-white border border-white/30"
+        >
+          {isPlaying ? <Pause className="w-5 h-5" /> : currentBeat > 0 ? <Play className="w-5 h-5" /> : <X className="w-5 h-5" />}
+        </Button>
+
+        <div className="flex-1 min-w-0">
+          <p className="text-sm md:text-lg font-semibold truncate">
+            {currentNote ? (
+              <>Toque a nota <span className="font-bold">{getNoteNamePt(currentNote.note)}</span></>
+            ) : isPlaying ? (
+              'Prepare-se…'
+            ) : (
+              exercise.title
+            )}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2 md:gap-3">
+          <div className="hidden sm:block w-32 md:w-56 h-2.5 rounded-full bg-white/20 overflow-hidden">
+            <motion.div
+              className="h-full bg-white rounded-full"
+              animate={{ width: `${progressPct}%` }}
+              transition={{ ease: 'linear', duration: 0.1 }}
+            />
+          </div>
+          <span className="text-xs md:text-sm font-semibold tabular-nums whitespace-nowrap">
+            {currentIndexForCount}/{exercise.notes.length}
+          </span>
+          <div className="flex items-center gap-1">
             {exerciseHasBackingTrack && (
               <Button
                 variant="ghost"
                 size="icon"
                 onClick={() => setBackingTrackEnabled(!backingTrackEnabled)}
-                title={backingTrackEnabled ? 'Desativar backing track' : 'Ativar backing track'}
-                className={backingTrackEnabled ? 'text-success' : ''}
+                className="rounded-full h-9 w-9 text-white hover:bg-white/15"
+                title="Backing track"
               >
-                <Music2 className="w-5 h-5" />
+                <Music2 className="w-4 h-4" />
               </Button>
             )}
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setPlaybackEnabled(!playbackEnabled)}
-              title={playbackEnabled ? 'Desativar notas' : 'Ativar notas'}
+              onClick={() => setShowSettings(!showSettings)}
+              className="rounded-full h-9 w-9 text-white hover:bg-white/15"
             >
-              {playbackEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+              <Settings className="w-4 h-4" />
             </Button>
-            <ThemeToggle />
             <Button
               variant="ghost"
               size="icon"
-              onClick={() => setShowSettings(!showSettings)}
+              onClick={handleRestart}
+              className="rounded-full h-9 w-9 text-white hover:bg-white/15"
             >
-              <Settings className="w-5 h-5" />
+              <RotateCcw className="w-4 h-4" />
             </Button>
           </div>
         </div>
@@ -251,148 +275,71 @@ export function PracticeSession({ exercise, onExit }: PracticeSessionProps) {
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
-            className="border-b border-border overflow-hidden flex-shrink-0"
+            className="overflow-hidden flex-shrink-0 bg-black/10"
           >
-            <div className="max-w-5xl mx-auto p-4">
-              <div className="flex items-center gap-4">
-                <span className="text-sm font-medium">Andamento:</span>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => setBpm(Math.max(40, bpm - 10))}
-                >
-                  <Minus className="w-4 h-4" />
-                </Button>
-                <div className="flex-1 max-w-xs">
-                  <Slider
-                    value={[bpm]}
-                    min={40}
-                    max={180}
-                    step={5}
-                    onValueChange={([v]) => setBpm(v)}
-                  />
-                </div>
-                <Button
-                  variant="outline"
-                  size="icon"
-                  className="h-8 w-8"
-                  onClick={() => setBpm(Math.min(180, bpm + 10))}
-                >
-                  <Plus className="w-4 h-4" />
-                </Button>
-                <span className="text-sm font-mono w-16">{bpm} BPM</span>
+            <div className="max-w-3xl mx-auto p-3 md:p-4 flex items-center gap-3 text-white">
+              <span className="text-sm font-medium">Andamento:</span>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-white/15" onClick={() => setBpm(Math.max(40, bpm - 10))}>
+                <Minus className="w-4 h-4" />
+              </Button>
+              <div className="flex-1 max-w-xs">
+                <Slider value={[bpm]} min={40} max={180} step={5} onValueChange={([v]) => setBpm(v)} />
               </div>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-white hover:bg-white/15" onClick={() => setBpm(Math.min(180, bpm + 10))}>
+                <Plus className="w-4 h-4" />
+              </Button>
+              <span className="text-sm font-mono w-16">{bpm} BPM</span>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-8 w-8 text-white hover:bg-white/15"
+                onClick={() => setPlaybackEnabled(!playbackEnabled)}
+                title={playbackEnabled ? 'Desativar notas' : 'Ativar notas'}
+              >
+                {playbackEnabled ? <Volume2 className="w-4 h-4" /> : <VolumeX className="w-4 h-4" />}
+              </Button>
+              <ThemeToggle />
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Main Content - Scrollable */}
-      <main className="flex-1 flex flex-col gap-4 p-3 md:p-4 max-w-5xl mx-auto w-full overflow-y-auto min-h-0">
-        {/* Current Note Display */}
-        <motion.div
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center py-4 md:py-8"
-        >
-          <p className="text-sm text-muted-foreground mb-2">Nota Atual</p>
-          <div
-            className={cn(
-              'text-5xl md:text-8xl font-display font-bold transition-colors duration-200',
-              currentPitch && 'gradient-text'
-            )}
-          >
-            {currentPitch
-              ? `${getNoteNamePt(currentPitch.note)}${currentPitch.octave}`
-              : '—'}
-          </div>
-          {currentPitch && (
-            <p className="text-sm text-muted-foreground mt-2">
-              {currentPitch.frequency.toFixed(1)} Hz
-            </p>
-          )}
-        </motion.div>
-
-        {/* Expected Note */}
-        {currentNote && (
-          <div className="text-center">
-            <p className="text-sm text-muted-foreground">Toque:</p>
-            <p className="text-xl md:text-2xl font-display font-bold text-primary">
-              {getNoteNamePt(currentNote.note)}{currentNote.octave}
-            </p>
-          </div>
-        )}
-
-        {/* Sheet Music */}
-        <SheetMusic
-          notes={exercise.notes}
-          currentBeat={currentBeat}
-          noteStatuses={noteStatuses}
-          clef={exercise.clef}
-        />
-
-        {/* Virtual Keyboard */}
-        <VirtualKeyboard
-          activeNote={
-            currentPitch
-              ? { note: currentPitch.note, octave: currentPitch.octave }
-              : null
-          }
-          highlightedNotes={highlightedNotes}
-          compact
-        />
-
-        {/* Progress Bar */}
-        <div className="space-y-2">
-          <div className="h-2 bg-muted rounded-full overflow-hidden">
-            <motion.div
-              className="h-full bg-primary"
-              initial={{ width: '0%' }}
-              animate={{
-                width: `${(currentBeat / totalBeats) * 100}%`,
-              }}
-            />
-          </div>
-          <div className="flex justify-between text-xs md:text-sm text-muted-foreground">
-            <span>
-              {correctNotes}/{exercise.notes.length} corretas
-            </span>
-            <span>
-              {Math.floor(currentBeat)}/{totalBeats} tempos
-            </span>
-          </div>
+      {/* Sheet Music (large area) */}
+      <main className="flex-1 min-h-0 flex items-center justify-center px-2 md:px-6 py-3 md:py-6">
+        <div className="w-full max-w-6xl bg-white rounded-xl shadow-2xl overflow-hidden">
+          <SheetMusic
+            notes={exercise.notes}
+            currentBeat={currentBeat}
+            noteStatuses={noteStatuses}
+            clef={exercise.clef}
+          />
         </div>
       </main>
 
-      {/* Controls - Fixed at bottom */}
-      <footer className="border-t border-border p-3 md:p-4 flex-shrink-0 bg-background">
-        <div className="max-w-5xl mx-auto flex items-center justify-center gap-4">
-          <Button variant="outline" size="icon" onClick={handleRestart}>
-            <RotateCcw className="w-5 h-5" />
-          </Button>
+      {/* Piano Keyboard - full width bottom */}
+      <div className="flex-shrink-0 w-full bg-black/20">
+        <VirtualKeyboard
+          activeNote={
+            currentPitch ? { note: currentPitch.note, octave: currentPitch.octave } : null
+          }
+          highlightedNotes={highlightedNotes}
+          stretch
+          height={typeof window !== 'undefined' && window.innerWidth < 768 ? 110 : 160}
+        />
+      </div>
+
+      {/* Start overlay when not yet started */}
+      {!isPlaying && !isCountingDown && currentBeat === 0 && (
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
           <Button
             size="lg"
-            className="w-32 glow-primary"
-            onClick={isPlaying ? handlePause : handleStart}
-            disabled={isCountingDown}
+            className="pointer-events-auto rounded-full h-20 w-20 md:h-24 md:w-24 bg-white text-primary hover:bg-white/90 shadow-2xl"
+            onClick={handleStart}
           >
-            {isCountingDown ? (
-              <span className="text-lg font-bold">{countdownNumber}</span>
-            ) : isPlaying ? (
-              <>
-                <Pause className="w-5 h-5 mr-2" />
-                Pausar
-              </>
-            ) : (
-              <>
-                <Play className="w-5 h-5 mr-2" />
-                {currentBeat > 0 ? 'Continuar' : 'Iniciar'}
-              </>
-            )}
+            <Play className="w-8 h-8 md:w-10 md:h-10 ml-1" />
           </Button>
         </div>
-      </footer>
+      )}
 
       {/* Countdown Overlay */}
       <AnimatePresence>
@@ -401,7 +348,7 @@ export function PracticeSession({ exercise, onExit }: PracticeSessionProps) {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50"
+            className="fixed inset-0 bg-black/40 backdrop-blur-sm flex items-center justify-center z-50"
           >
             <motion.div
               key={countdownNumber}
@@ -409,7 +356,7 @@ export function PracticeSession({ exercise, onExit }: PracticeSessionProps) {
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 1.5, opacity: 0 }}
               transition={{ duration: 0.3 }}
-              className="text-9xl font-display font-bold gradient-text"
+              className="text-9xl font-display font-bold text-white drop-shadow-lg"
             >
               {countdownNumber}
             </motion.div>

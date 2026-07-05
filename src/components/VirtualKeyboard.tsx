@@ -8,6 +8,8 @@ interface VirtualKeyboardProps {
   highlightedNotes?: Array<{ note: string; octave: number; status: 'pending' | 'correct' | 'wrong' | 'close' }>;
   showLabels?: boolean;
   compact?: boolean;
+  stretch?: boolean;
+  height?: number;
 }
 
 export function VirtualKeyboard({
@@ -15,6 +17,8 @@ export function VirtualKeyboard({
   highlightedNotes = [],
   showLabels = true,
   compact = false,
+  stretch = false,
+  height,
 }: VirtualKeyboardProps) {
   const whiteKeys = useMemo(() => PIANO_KEYS.filter(k => !k.isBlack), []);
   const blackKeys = useMemo(() => PIANO_KEYS.filter(k => k.isBlack), []);
@@ -42,9 +46,9 @@ export function VirtualKeyboard({
   };
 
   const keyWidth = compact ? 28 : 40;
-  const keyHeight = compact ? 100 : 150;
+  const keyHeight = height ?? (compact ? 100 : 150);
   const blackKeyWidth = compact ? 20 : 28;
-  const blackKeyHeight = compact ? 60 : 90;
+  const blackKeyHeight = Math.round(keyHeight * 0.6);
 
   // SimplyPiano-style status colors
   const getStatusClasses = (status: string | undefined, isActive: boolean, isBlackKey: boolean) => {
@@ -59,8 +63,8 @@ export function VirtualKeyboard({
     }
     if (status === 'pending') {
       return isBlackKey
-        ? 'bg-sky-500 dark:bg-sky-400 shadow-[0_0_12px_hsl(200_80%_50%/0.4)] ring-2 ring-sky-300'
-        : 'bg-sky-100 dark:bg-sky-900/50 ring-2 ring-sky-400 dark:ring-sky-500';
+        ? 'bg-teal-400 dark:bg-teal-500 shadow-[0_0_12px_hsl(174_72%_50%/0.5)]'
+        : 'bg-teal-300 dark:bg-teal-400 ring-2 ring-teal-400';
     }
     if (isActive) {
       return isBlackKey
@@ -70,46 +74,48 @@ export function VirtualKeyboard({
     return '';
   };
 
+  const containerClass = stretch
+    ? 'relative w-full'
+    : 'relative overflow-x-auto pb-4';
+
   return (
-    <div className="relative overflow-x-auto pb-4">
+    <div className={containerClass}>
       <div
-        className="relative mx-auto"
+        className={cn('relative', stretch ? 'w-full' : 'mx-auto')}
         style={{
-          width: whiteKeys.length * keyWidth,
-          height: keyHeight + 10,
+          width: stretch ? '100%' : whiteKeys.length * keyWidth,
+          height: keyHeight,
         }}
       >
+
         {/* White keys */}
-        <div className="flex">
+        <div className={cn('flex h-full', stretch && 'w-full')}>
           {whiteKeys.map((key) => {
             const { isActive, status } = getKeyStatus(key.note, key.octave);
             const statusClass = getStatusClasses(status, isActive, false);
+            const showKeyLabel = showLabels && (isActive || status === 'pending' || status === 'correct' || status === 'wrong' || status === 'close');
             return (
               <motion.div
                 key={`${key.note}${key.octave}`}
                 className={cn(
                   'relative flex flex-col justify-end items-center pb-2 cursor-pointer transition-all duration-100',
                   'border-r border-border/30 first:rounded-bl-lg last:rounded-br-lg',
-                  // Default white key style
+                  stretch && 'flex-1 min-w-0',
                   !statusClass && !isActive && 'bg-white dark:bg-[hsl(var(--piano-white))] hover:bg-gray-50 dark:hover:bg-muted shadow-[inset_0_-2px_4px_rgba(0,0,0,0.08)] border border-gray-200 dark:border-border/30',
                   statusClass,
                 )}
-                style={{
-                  width: keyWidth,
-                  height: keyHeight,
-                }}
+                style={stretch ? { height: keyHeight } : { width: keyWidth, height: keyHeight }}
                 animate={isActive ? { scale: 0.98 } : { scale: 1 }}
                 transition={{ duration: 0.1 }}
               >
-                {showLabels && (
+                {showKeyLabel && (
                   <span className={cn(
-                    'text-xs font-semibold',
-                    status === 'pending' ? 'text-sky-600 dark:text-sky-300' :
+                    'text-sm md:text-base font-bold',
                     status === 'correct' || status === 'wrong' || status === 'close' ? 'text-white' :
-                    isActive ? 'text-primary' : 'text-gray-400 dark:text-muted-foreground'
+                    status === 'pending' ? 'text-white' :
+                    'text-primary'
                   )}>
                     {getNoteNamePt(key.note)}
-                    <sub className="text-[10px]">{key.octave}</sub>
                   </span>
                 )}
               </motion.div>
@@ -122,6 +128,11 @@ export function VirtualKeyboard({
           const { isActive, status } = getKeyStatus(key.note, key.octave);
           const pos = getBlackKeyPosition(key.note, key.octave);
           const statusClass = getStatusClasses(status, isActive, true);
+          const whiteW = stretch ? `calc(100% / ${whiteKeys.length})` : `${keyWidth}px`;
+          const blackW = stretch ? `calc((100% / ${whiteKeys.length}) * 0.6)` : `${blackKeyWidth}px`;
+          const leftStyle = stretch
+            ? `calc((100% / ${whiteKeys.length}) * ${pos + 1} - (100% / ${whiteKeys.length}) * 0.3)`
+            : `${pos * keyWidth + keyWidth - blackKeyWidth / 2}px`;
 
           return (
             <motion.div
@@ -132,8 +143,8 @@ export function VirtualKeyboard({
                 statusClass,
               )}
               style={{
-                left: pos * keyWidth + keyWidth - blackKeyWidth / 2,
-                width: blackKeyWidth,
+                left: leftStyle,
+                width: blackW,
                 height: blackKeyHeight,
               }}
               animate={isActive ? { scale: 0.98 } : { scale: 1 }}
