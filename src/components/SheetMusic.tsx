@@ -19,12 +19,13 @@ const TREBLE_LINES = [
   { note: 'F', octave: 5 },
 ];
 
-// All notes from C3 to C6 with their vertical positions
+// Vertical positions in diatonic steps from top of staff area.
+// Treble staff lines: F5=2, D5=4, B4=6, G4=8, E4=10 (spacing = 2 per line).
+// Each diatonic step = 1 position unit = lineSpacing/2 pixels.
 const NOTE_POSITIONS: Record<string, number> = {
-  'C3': 13, 'D3': 12.5, 'E3': 12, 'F3': 11.5, 'G3': 11, 'A3': 10.5, 'B3': 10,
-  'C4': 9.5, 'D4': 9, 'E4': 8.5, 'F4': 8, 'G4': 7.5, 'A4': 7, 'B4': 6.5,
-  'C5': 6, 'D5': 5.5, 'E5': 5, 'F5': 4.5, 'G5': 4, 'A5': 3.5, 'B5': 3,
-  'C6': 2.5,
+  'C6': -2, 'B5': -1, 'A5': 0, 'G5': 1, 'F5': 2, 'E5': 3, 'D5': 4,
+  'C5': 5, 'B4': 6, 'A4': 7, 'G4': 8, 'F4': 9, 'E4': 10, 'D4': 11,
+  'C4': 12, 'B3': 13, 'A3': 14, 'G3': 15, 'F3': 16, 'E3': 17, 'D3': 18, 'C3': 19,
 };
 
 export function SheetMusic({
@@ -39,8 +40,9 @@ export function SheetMusic({
 
   const getNoteY = (note: string, octave: number) => {
     const key = `${note.replace('#', '')}${octave}`;
-    const position = NOTE_POSITIONS[key] ?? 7;
-    return position * (lineSpacing / 2);
+    const position = NOTE_POSITIONS[key] ?? 8;
+    // Center the note head (h-4 = 16px) on the staff line/space
+    return 20 + position * (lineSpacing / 2) - 8;
   };
 
   const getStatusColor = (status: string) => {
