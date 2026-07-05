@@ -201,7 +201,7 @@ export function PracticeSession({ exercise, onExit }: PracticeSessionProps) {
   const progressPct = Math.min(100, (currentBeat / totalBeats) * 100);
 
   return (
-    <div className="h-[100dvh] flex flex-col overflow-hidden bg-[hsl(265_70%_65%)] dark:bg-[hsl(265_45%_35%)] text-white">
+    <div className="relative h-[100dvh] flex flex-col overflow-hidden bg-[hsl(265_70%_65%)] dark:bg-[hsl(265_45%_35%)] text-white">
       {/* Top Bar */}
       <header className="flex-shrink-0 px-3 md:px-6 py-3 flex items-center gap-3 md:gap-6">
         <Button
