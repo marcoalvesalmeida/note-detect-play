@@ -8,6 +8,8 @@ interface VirtualKeyboardProps {
   highlightedNotes?: Array<{ note: string; octave: number; status: 'pending' | 'correct' | 'wrong' | 'close' }>;
   showLabels?: boolean;
   compact?: boolean;
+  stretch?: boolean;
+  height?: number;
 }
 
 export function VirtualKeyboard({
@@ -15,6 +17,8 @@ export function VirtualKeyboard({
   highlightedNotes = [],
   showLabels = true,
   compact = false,
+  stretch = false,
+  height,
 }: VirtualKeyboardProps) {
   const whiteKeys = useMemo(() => PIANO_KEYS.filter(k => !k.isBlack), []);
   const blackKeys = useMemo(() => PIANO_KEYS.filter(k => k.isBlack), []);
