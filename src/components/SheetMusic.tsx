@@ -46,15 +46,24 @@ export function SheetMusic({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'correct':
-        return 'text-note-correct fill-note-correct';
+        return 'bg-emerald-500 border-emerald-600';
       case 'wrong':
-        return 'text-note-wrong fill-note-wrong';
+        return 'bg-red-500 border-red-600';
       case 'close':
-        return 'text-note-close fill-note-close';
+        return 'bg-amber-500 border-amber-600';
       case 'missed':
-        return 'text-destructive fill-destructive opacity-50';
+        return 'bg-red-400 border-red-500 opacity-60';
       default:
-        return 'text-foreground fill-foreground';
+        return 'bg-neutral-900 border-neutral-900 dark:bg-neutral-100 dark:border-neutral-100';
+    }
+  };
+
+  const getStemColor = (status: string) => {
+    switch (status) {
+      case 'correct': return 'bg-emerald-600';
+      case 'wrong': return 'bg-red-600';
+      case 'close': return 'bg-amber-600';
+      default: return 'bg-neutral-900 dark:bg-neutral-100';
     }
   };
 
@@ -126,15 +135,13 @@ export function SheetMusic({
             const isCurrent = i === Math.floor(currentBeat);
 
             return (
-              <motion.div
+              <div
                 key={i}
                 className="relative flex-shrink-0"
                 style={{
                   width: noteSpacing,
                   height: staffHeight,
                 }}
-                initial={{ opacity: 0, scale: 0.8 }}
-                animate={{ opacity: 1, scale: 1 }}
               >
                 {/* Ledger lines if needed */}
                 {y > staffHeight - 10 && (
@@ -151,24 +158,17 @@ export function SheetMusic({
                 )}
 
                 {/* Note head */}
-                <motion.div
+                <div
                   className={cn(
-                    'absolute left-1/2 -translate-x-1/2 w-5 h-4 rounded-full border-2',
+                    'absolute left-1/2 -translate-x-1/2 w-5 h-4 rounded-full border-2 transition-colors duration-150',
                     getStatusColor(status),
-                    isCurrent && 'ring-2 ring-primary ring-offset-2 ring-offset-background',
-                    note.duration >= 2 ? 'bg-transparent' : '',
+                    isCurrent && 'ring-2 ring-primary ring-offset-2 ring-offset-white',
                   )}
                   style={{ top: y }}
-                  animate={
-                    isCurrent
-                      ? { scale: [1, 1.1, 1] }
-                      : { scale: 1 }
-                  }
-                  transition={{ duration: 0.5, repeat: isCurrent ? Infinity : 0 }}
                 >
                   {/* Sharp symbol */}
                   {isSharp && (
-                    <span className="absolute -left-4 -top-1 text-sm">♯</span>
+                    <span className="absolute -left-4 -top-1 text-sm text-neutral-900 dark:text-neutral-100">♯</span>
                   )}
 
                   {/* Note stem */}
@@ -177,11 +177,11 @@ export function SheetMusic({
                       className={cn(
                         'absolute w-0.5 h-8',
                         y < staffHeight / 2 ? 'left-0 top-2' : 'right-0 -top-8',
-                        getStatusColor(status).includes('fill') ? 'bg-current' : 'bg-foreground'
+                        getStemColor(status)
                       )}
                     />
                   )}
-                </motion.div>
+                </div>
 
                 {/* Note name label */}
                 <div
@@ -190,7 +190,7 @@ export function SheetMusic({
                 >
                   {getNoteNamePt(note.note)}{note.octave}
                 </div>
-              </motion.div>
+              </div>
             );
           })}
         </div>
