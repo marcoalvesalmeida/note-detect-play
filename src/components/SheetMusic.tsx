@@ -46,15 +46,24 @@ export function SheetMusic({
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'correct':
-        return 'text-note-correct fill-note-correct';
+        return 'bg-emerald-500 border-emerald-600';
       case 'wrong':
-        return 'text-note-wrong fill-note-wrong';
+        return 'bg-red-500 border-red-600';
       case 'close':
-        return 'text-note-close fill-note-close';
+        return 'bg-amber-500 border-amber-600';
       case 'missed':
-        return 'text-destructive fill-destructive opacity-50';
+        return 'bg-red-400 border-red-500 opacity-60';
       default:
-        return 'text-foreground fill-foreground';
+        return 'bg-neutral-900 border-neutral-900 dark:bg-neutral-100 dark:border-neutral-100';
+    }
+  };
+
+  const getStemColor = (status: string) => {
+    switch (status) {
+      case 'correct': return 'bg-emerald-600';
+      case 'wrong': return 'bg-red-600';
+      case 'close': return 'bg-amber-600';
+      default: return 'bg-neutral-900 dark:bg-neutral-100';
     }
   };
 
