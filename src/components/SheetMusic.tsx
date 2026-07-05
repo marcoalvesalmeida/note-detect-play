@@ -40,8 +40,9 @@ export function SheetMusic({
 
   const getNoteY = (note: string, octave: number) => {
     const key = `${note.replace('#', '')}${octave}`;
-    const position = NOTE_POSITIONS[key] ?? 7;
-    return position * (lineSpacing / 2);
+    const position = NOTE_POSITIONS[key] ?? 8;
+    // Center the note head (h-4 = 16px) on the staff line/space
+    return 20 + position * (lineSpacing / 2) - 8;
   };
 
   const getStatusColor = (status: string) => {
