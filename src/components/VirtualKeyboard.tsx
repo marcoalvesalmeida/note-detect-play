@@ -46,9 +46,9 @@ export function VirtualKeyboard({
   };
 
   const keyWidth = compact ? 28 : 40;
-  const keyHeight = compact ? 100 : 150;
+  const keyHeight = height ?? (compact ? 100 : 150);
   const blackKeyWidth = compact ? 20 : 28;
-  const blackKeyHeight = compact ? 60 : 90;
+  const blackKeyHeight = Math.round(keyHeight * 0.6);
 
   // SimplyPiano-style status colors
   const getStatusClasses = (status: string | undefined, isActive: boolean, isBlackKey: boolean) => {
@@ -63,8 +63,8 @@ export function VirtualKeyboard({
     }
     if (status === 'pending') {
       return isBlackKey
-        ? 'bg-sky-500 dark:bg-sky-400 shadow-[0_0_12px_hsl(200_80%_50%/0.4)] ring-2 ring-sky-300'
-        : 'bg-sky-100 dark:bg-sky-900/50 ring-2 ring-sky-400 dark:ring-sky-500';
+        ? 'bg-teal-400 dark:bg-teal-500 shadow-[0_0_12px_hsl(174_72%_50%/0.5)]'
+        : 'bg-teal-300 dark:bg-teal-400 ring-2 ring-teal-400';
     }
     if (isActive) {
       return isBlackKey
@@ -74,15 +74,20 @@ export function VirtualKeyboard({
     return '';
   };
 
+  const containerClass = stretch
+    ? 'relative w-full'
+    : 'relative overflow-x-auto pb-4';
+
   return (
-    <div className="relative overflow-x-auto pb-4">
+    <div className={containerClass}>
       <div
-        className="relative mx-auto"
+        className={cn('relative', stretch ? 'w-full' : 'mx-auto')}
         style={{
-          width: whiteKeys.length * keyWidth,
-          height: keyHeight + 10,
+          width: stretch ? '100%' : whiteKeys.length * keyWidth,
+          height: keyHeight,
         }}
       >
+
         {/* White keys */}
         <div className="flex">
           {whiteKeys.map((key) => {
