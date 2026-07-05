@@ -36,7 +36,7 @@ export function SheetMusic({
 }: SheetMusicProps) {
   const staffHeight = 120;
   const lineSpacing = staffHeight / 6;
-  const noteSpacing = 60;
+  const noteSpacing = 72;
 
   const getNoteY = (note: string, octave: number) => {
     const key = `${note.replace('#', '')}${octave}`;
@@ -187,10 +187,11 @@ export function SheetMusic({
 
                 {/* Note name label */}
                 <div
-                  className="absolute left-1/2 -translate-x-1/2 text-xs text-muted-foreground whitespace-nowrap"
-                  style={{ top: staffHeight + 5 }}
+                  className="absolute left-1/2 -translate-x-1/2 text-[11px] font-medium text-neutral-600 dark:text-neutral-300 whitespace-nowrap tracking-tight"
+                  style={{ top: staffHeight + 12 }}
                 >
-                  {getNoteNamePt(note.note)}{note.octave}
+                  {getNoteNamePt(note.note)}
+                  <span className="text-neutral-400">{note.octave}</span>
                 </div>
               </div>
             );
