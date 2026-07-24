@@ -86,20 +86,11 @@ export function SheetMusic({
           className="absolute inset-0 w-full h-full"
           preserveAspectRatio="none"
         >
-          {/* Treble clef symbol placeholder */}
-          <text
-            x="10"
-            y={staffHeight / 2 + 10}
-            className="fill-foreground text-4xl font-serif"
-          >
-            𝄞
-          </text>
-
           {/* Staff lines */}
           {[0, 1, 2, 3, 4].map((i) => (
             <line
               key={i}
-              x1="50"
+              x1="70"
               y1={20 + i * lineSpacing}
               x2="100%"
               y2={20 + i * lineSpacing}
@@ -108,20 +99,31 @@ export function SheetMusic({
             />
           ))}
 
-          {/* Current beat indicator */}
-          <motion.line
+          {/* Current beat indicator (static, non-animated to avoid jitter) */}
+          <line
             x1={100}
             y1={10}
             x2={100}
             y2={staffHeight}
-            className="stroke-primary"
+            className="stroke-primary opacity-70"
             strokeWidth="2"
             strokeDasharray="4 2"
-            initial={false}
-            animate={{ opacity: [0.5, 1, 0.5] }}
-            transition={{ duration: 1, repeat: Infinity }}
           />
         </svg>
+
+        {/* Treble clef — static, large, anchored to the G4 line (2nd line from bottom) */}
+        <div
+          className="absolute pointer-events-none select-none text-foreground leading-none"
+          style={{
+            left: 8,
+            // G4 line sits at y = 20 + 3*lineSpacing; center clef around it
+            top: 20 + 3 * lineSpacing - staffHeight * 0.72,
+            fontSize: staffHeight * 1.35,
+            fontFamily: 'serif',
+          }}
+        >
+          𝄞
+        </div>
 
         {/* Notes */}
         <div
